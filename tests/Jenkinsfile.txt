@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+
+    environment {
+        SONAR_SCANNER_HOME = tool 'SonarScanner'
+    }
+
+    stages {
+        stage('Cloner') {
+            steps {
+                git 'https://github.com/<ton-utilisateur>/ci-flask-project.git'
+            }
+        }
+
+        stage('Installer les dépendances') {
+            steps {
+                bat 'venv\\Scripts\\activate && pip install -r requirements.txt'
+            }
+        }
+
+        stage('Tests unitaires') {
+            steps {
+                bat 'venv\\Scripts\\activate && pytest --cov=app tests/'
+            }
+        }
+
+        stage('Analyse SonarQube') {
+            steps {
+                withSonarQubeEnv('SonarQube') {
+                    bat "${env.SONAR_SCANNER_HOME}\\bin\\sonar-scanner.bat"
+                }
+            }
+        }
+
+        stage('CI terminée') {
+            steps {
+                echo 'CI terminée avec succès'
+            }
+        }
+    }
+
+    triggers {
+        githubPush()
+    }
+}
